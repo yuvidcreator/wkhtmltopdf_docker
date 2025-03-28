@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    restart: always
+    env_file:
+      - .env.${ENVIRONMENT:-development}  # Load environment-specific variables
+    environment:
+      - MYSQL_ROOT_PASSWORD=MYSQL_ROOT_PASSWORD
+      - MYSQL_ALLOW_EMPTY_PASSWORD=MYSQL_ALLOW_EMPTY_PASSWORD
+      - MYSQL_RANDOM_ROOT_PASSWORD=MYSQL_RANDOM_ROOT_PASSWORD
+      - MYSQL_DATABASE=MYSQL_DATABASE
+      - MYSQL_USER=MYSQL_USER
+      - MYSQL_PASSWORD=MYSQL_PASSWORD
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - wkhtmltopdf_backend-fastapi
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - wkhtmltopdf_backend-fastapi
+  
+  celery_worker:
+    image: celery_worker:wkhtmltopdf-celery_worker
+    build:
+        context: .
+        # dockerfile: ./docker/local/django/Dockerfile
+    command: /start
+    volumes:
+        - ./logs:/app/logs
+    env_file: 
+        - .env.${ENVIRONMENT:-development} 
+    depends_on:
+        - mysql-dbß
+        - redis
+    networks:
+        - wkhtmltopdf_backend-fastapi
+
+  wkhtmltopdf_backend:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    env_file:
+      - .env.${ENVIRONMENT:-development}  # Load environment-specific variables
+    depends_on:
+      - mysql-db
+      - redis
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      # - wkhtmltopdf_static_volume:/app/output
+    networks:
+      - wkhtmltopdf_backend-fastapi
+
+  # weasyprint_backend:
+  #   build:
+  #     context: ./weasyprint_backend
+  #   env_file: .env.development
+  #   depends_on:
+  #     - mysql-db
+  #     - redis
+  #   ports:
+  #     - "8001:8000"
+  
+  # prometheus:
+  #   image: prom/prometheus
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #   ports:
+  #     - "9090:9090"
+  #   networks:
+  #     - wkhtmltopdf_backend-fastapi
+
+  # grafana:
+  #   image: grafana/grafana
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - prometheus
+  #   networks:
+  #     - wkhtmltopdf_backend-fastapi
+
+networks:
+  wkhtmltopdf_backend-fastapi:
+      driver: bridge
+
+volumes:
+  mysql_data:
