@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
@@ -20,9 +20,11 @@ if dev_mode == "docker":
     MYSQL_DATABASE=os.getenv("MYSQL_DATABASE")
     MYSQL_USER=os.getenv("MYSQL_USER")
     MYSQL_PASSWORD=os.getenv("MYSQL_PASSWORD")
-    DATABASE_URL = f"mysql+mysqlconnector://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql-db:3306/${MYSQL_DATABASE}"
+    DATABASE_URL = f"mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql-db:3306/${MYSQL_DATABASE}"
 else:
     DATABASE_URL = os.getenv("DATABASE_URL")
+
+    print(DATABASE_URL)
 
 engine = create_engine(
     DATABASE_URL,
@@ -35,6 +37,6 @@ engine = create_engine(
         "init_command": "SET SESSION wait_timeout=2592000"
     }
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
-
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+metadata = MetaData()

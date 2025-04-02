@@ -2,11 +2,13 @@ from app.models import ProcessTable
 from app.utils.pdf_utils import generate_charts, process_excel
 from app.utils.html_utils import generate_pdf
 from worker import celery_app
+# from main import db_dependency
 
 # Celery Task
 from app.db import SessionLocal
 
 @celery_app.task(bind=True)
+# @celery_app.task
 def process_report_task(self, order_id: str, file_path: str):
     db = SessionLocal()
     try:

@@ -1,10 +1,11 @@
 import uuid
 # from main import app as route
-from fastapi import UploadFile, BackgroundTasks, HTTPException, APIRouter
+from fastapi import UploadFile, File, BackgroundTasks, HTTPException, APIRouter
 from app.db import SessionLocal
+from app.tasks import process_report_task
 from app.utils.pdf_utils import save_uploaded_file
 from app.models import ProcessTable
-from app.utils.tasks import process_report_task
+
 
 
 
@@ -16,14 +17,17 @@ route = APIRouter()
 @route.post("/upload-excel/")
 def upload_excel(file: UploadFile, background_tasks: BackgroundTasks):
     order_id = str(uuid.uuid4())
-    file_path = save_uploaded_file(file)
-    
+    file_path = save_uploaded_file(file, order_id)
+    print(file_path)
     db = SessionLocal()
-    db.add(ProcessTable(order_id=order_id, status="pending"))
+    db.add(ProcessTable(order_id=order_id, status="pending", file_path=file_path))
     db.commit()
     db.close()
-    # task = process_report_task.apply_async(args=[order_id, file_path])
-    background_tasks.add_task(process_report_task, order_id, file_path)
+    task = process_report_task.apply_async(args=[order_id, file_path])
+    # background_tasks.add_task(process_report_task, order_id, file_path)
+    print(task)
+    # print(dir(task))
+    print(task.info)
     return {"order_id": order_id, "status": "processing"}
 
 

@@ -1,14 +1,23 @@
 import os
-from app.db import Base, SessionLocal, engine
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from typing import Annotated
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
+from sqlalchemy.orm import Session
+# from contextlib import asynccontextmanager
 # import logging
 # import logging.config
 
+# from __future__ import annotations
+# from typing import TYPE_CHECKING
+
+# import celery.states
+# from celery.result import AsyncResult
+
 # Load environment variables
 from dotenv import load_dotenv
-
+from app import models
+from app.db import Base, SessionLocal, engine
 from app.routes.pdf import route as pdf_router
 
 
@@ -25,11 +34,38 @@ load_dotenv(f".env.{os.getenv('ENVIRONMENT', 'development')}")
 #     finally:
 #         db.close()
 
-Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# models.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
+
+db_dependency = Annotated[Session, Depends(get_db)]
+
+
+# if TYPE_CHECKING:
+#     from celery import Task
+#     long_task: Task
+
 
 # FastAPI Initialization
 # app = FastAPI(lifespan=lifespan)
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configuration
 TEMPLATE_DIR = "templates"

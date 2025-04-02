@@ -8,13 +8,17 @@ services:
       - .env.${ENVIRONMENT:-development}  # Load environment-specific variables
     environment:
       - MYSQL_ROOT_PASSWORD=MYSQL_ROOT_PASSWORD
-      - MYSQL_ALLOW_EMPTY_PASSWORD=MYSQL_ALLOW_EMPTY_PASSWORD
-      - MYSQL_RANDOM_ROOT_PASSWORD=MYSQL_RANDOM_ROOT_PASSWORD
+      # - MYSQL_ALLOW_EMPTY_PASSWORD=MYSQL_ALLOW_EMPTY_PASSWORD
+      # - MYSQL_RANDOM_ROOT_PASSWORD=MYSQL_RANDOM_ROOT_PASSWORD
       - MYSQL_DATABASE=MYSQL_DATABASE
       - MYSQL_USER=MYSQL_USER
       - MYSQL_PASSWORD=MYSQL_PASSWORD
     ports:
       - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -33,13 +37,13 @@ services:
     build:
         context: .
         # dockerfile: ./docker/local/django/Dockerfile
-    command: /start
+    command: celery -A app.tasks worker --loglevel=INFO -E
     volumes:
         - ./logs:/app/logs
     env_file: 
         - .env.${ENVIRONMENT:-development} 
     depends_on:
-        - mysql-dbß
+        - mysql-db
         - redis
     networks:
         - wkhtmltopdf_backend-fastapi
@@ -56,7 +60,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./logs:/app/logs
+      - wkhtmltopdf_app:/app
       # - wkhtmltopdf_static_volume:/app/output
     networks:
       - wkhtmltopdf_backend-fastapi
@@ -95,3 +99,4 @@ networks:
 
 volumes:
   mysql_data:
+  wkhtmltopdf_app:

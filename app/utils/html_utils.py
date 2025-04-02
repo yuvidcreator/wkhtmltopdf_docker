@@ -7,6 +7,7 @@ import subprocess
 
 # Utility: Generate PDF using wkhtmltopdf
 def generate_pdf(order_id: str, json_data: dict, charts_path: str):
+    print("Generating PDF --> JSON Data --> ", json_data)
     html_content = f"""
     <html>
     <head>
@@ -22,10 +23,19 @@ def generate_pdf(order_id: str, json_data: dict, charts_path: str):
         <div class='page-break'></div>
         <h2>Charts</h2>
     """
+
+    options = {
+        "quiet": "",
+        "enable-local-file-access": "",  # ✅ Allows local file access
+        "page-size": "A4",
+        "dpi": 300
+    }
     
     for chart in os.listdir(charts_path):
-        html_content += f'<img src="{charts_path}/{chart}" style="width:100%;"><div class="page-break"></div>'
-    
+        print(chart[1])
+        html_content += f'<img src="{charts_path}{chart}" style="width:100%;"><div class="page-break"></div>'
+        # html_content += f'<img src="{charts_path}{chart.replace("/","")}" style="width:100%;"><div class="page-break"></div>'
+
     html_content += "</body></html>"
     html_file = f"templates/{order_id}.html"
     pdf_file = f"output/{order_id}.pdf"
@@ -34,7 +44,7 @@ def generate_pdf(order_id: str, json_data: dict, charts_path: str):
     with open(html_file, "w") as file:
         file.write(html_content)
     
-    subprocess.run(["wkhtmltopdf", html_file, pdf_file])
+    subprocess.run(["wkhtmltopdf", html_file, pdf_file, options])
     return pdf_file
 
 
