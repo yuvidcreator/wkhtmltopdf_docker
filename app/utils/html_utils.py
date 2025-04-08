@@ -3,7 +3,7 @@ import json
 import subprocess
 
 
-
+# config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf')
 
 # Utility: Generate PDF using wkhtmltopdf
 def generate_pdf(order_id: str, json_data: dict, charts_path: str):
@@ -38,13 +38,19 @@ def generate_pdf(order_id: str, json_data: dict, charts_path: str):
 
     html_content += "</body></html>"
     html_file = f"templates/{order_id}.html"
+    # os.path.abspath
     pdf_file = f"output/{order_id}.pdf"
     
     os.makedirs("output", exist_ok=True)
-    with open(html_file, "w") as file:
-        file.write(html_content)
     
-    subprocess.run(["wkhtmltopdf", html_file, pdf_file, options])
-    return pdf_file
+    try:
+        with open(html_file, "w") as file:
+            file.write(html_content)
+        subprocess.run(["wkhtmltopdf", html_file, pdf_file, options])
+        return pdf_file
+    except Exception as e:
+        print(f"Error ----->  {e}")
+        # return f"{e}"
+        return None
 
 

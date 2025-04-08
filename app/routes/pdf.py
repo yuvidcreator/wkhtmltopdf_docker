@@ -27,7 +27,7 @@ def upload_excel(file: UploadFile, background_tasks: BackgroundTasks):
     # background_tasks.add_task(process_report_task, order_id, file_path)
     print(task)
     # print(dir(task))
-    print(task.info)
+    print(task.status)
     return {"order_id": order_id, "status": "processing"}
 
 

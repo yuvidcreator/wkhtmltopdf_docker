@@ -18,12 +18,13 @@ def process_report_task(self, order_id: str, file_path: str):
         data = process_excel(file_path)
         charts_path = generate_charts(data, order_id)
         pdf_path = generate_pdf(order_id, data, charts_path)
-        
-        db.query(ProcessTable).filter(ProcessTable.order_id == order_id).update({"status": "completed", "file_path": pdf_path})
-        db.commit()
+
+        if pdf_path is not None:
+            db.query(ProcessTable).filter(ProcessTable.order_id == order_id).update({"status": "completed", "file_path": pdf_path})
+            db.commit()
     except Exception as e:
         db.query(ProcessTable).filter(ProcessTable.order_id == order_id).update({"status": "failed"})
         db.commit()
-        print(str(e))
+        print(f"@Task -- Error --> {e}")
     finally:
         db.close()
